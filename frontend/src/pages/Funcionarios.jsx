@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { funcionarioService } from '../services/api';
+import { funcionarioService, cidadeService } from '../services/api';
 
 export default function Funcionarios() {
   const [funcionarios, setFuncionarios] = useState([]);
+  const [cidades, setCidades] = useState([]);
   const [nome, setNome] = useState('');
   const [cargo, setCargo] = useState('');
+  const [cidadeId, setCidadeId] = useState('');
   const [erro, setErro] = useState('');
   const [editandoId, setEditandoId] = useState(null);
 
   useEffect(() => {
     carregarFuncionarios();
+    carregarCidades();
   }, []);
 
   const carregarFuncionarios = async () => {
@@ -21,9 +24,19 @@ export default function Funcionarios() {
     }
   };
 
+  const carregarCidades = async () => {
+    try {
+      const response = await cidadeService.listar();
+      setCidades(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar cidades', error);
+    }
+  };
+
   const resetarFormulario = () => {
     setNome('');
     setCargo('');
+    setCidadeId('');
     setErro('');
     setEditandoId(null);
   };
@@ -32,11 +45,12 @@ export default function Funcionarios() {
     setEditandoId(funcionario.id);
     setNome(funcionario.nome);
     setCargo(funcionario.cargo);
+    setCidadeId(funcionario.cidadeId || '');
     setErro('');
   };
 
   const salvarFuncionario = async () => {
-    if (!nome.trim() || !cargo.trim()) {
+    if (!nome.trim() || !cargo.trim() || !cidadeId) {
       setErro('Preencha todos os campos!');
       return;
     }
@@ -44,10 +58,16 @@ export default function Funcionarios() {
     setErro('');
 
     try {
+      const dadosFuncionario = {
+        nome: nome.trim(),
+        cargo: cargo.trim(),
+        cidadeId,
+      };
+
       if (editandoId) {
-        await funcionarioService.atualizar(editandoId, { nome: nome.trim(), cargo: cargo.trim() });
+        await funcionarioService.atualizar(editandoId, dadosFuncionario);
       } else {
-        await funcionarioService.cadastrar({ nome: nome.trim(), cargo: cargo.trim() });
+        await funcionarioService.cadastrar(dadosFuncionario);
       }
 
       resetarFormulario();
@@ -82,6 +102,18 @@ export default function Funcionarios() {
             value={cargo}
             onChange={(e) => setCargo(e.target.value)}
           />
+          <select
+            className={`field-input ${erro && !cidadeId ? 'input-error' : ''}`}
+            value={cidadeId}
+            onChange={(e) => setCidadeId(e.target.value)}
+          >
+            <option value="">Selecione a cidade</option>
+            {cidades.map((cidade) => (
+              <option key={cidade.id} value={cidade.id}>
+                {cidade.nome}
+              </option>
+            ))}
+          </select>
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
@@ -102,19 +134,24 @@ export default function Funcionarios() {
               <tr>
                 <th>Nome</th>
                 <th>Cargo</th>
+                <th>Cidade</th>
                 <th className="table-action-header"></th>
               </tr>
             </thead>
             <tbody>
-              {funcionarios.map((func) => (
-                <tr key={func.id}>
-                  <td>{func.nome}</td>
-                  <td>{func.cargo}</td>
-                  <td>
-                    <span className="edit-icon" onClick={() => handleEditar(func)} title="Editar">✏️</span>
-                  </td>
-                </tr>
-              ))}
+              {funcionarios.map((func) => {
+                const cidade = cidades.find((item) => item.id === Number(func.cidadeId));
+                return (
+                  <tr key={func.id}>
+                    <td>{func.nome}</td>
+                    <td>{func.cargo}</td>
+                    <td>{cidade ? cidade.nome : '-'}</td>
+                    <td>
+                      <span className="edit-icon" onClick={() => handleEditar(func)} title="Editar">✏️</span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

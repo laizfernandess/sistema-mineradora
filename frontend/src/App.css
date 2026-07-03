@@ -118,20 +118,33 @@
   gap: 1rem;
 }
 
-.formulario-cadastro input {
+.formulario-cadastro input,
+.formulario-cadastro select {
   width: 100%;
-  padding: 0.85rem 1rem;
+  padding: 0.8rem 0.95rem;
   margin: 0;
   border: 1px solid var(--border);
   border-radius: 0.8rem;
   background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.95rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.formulario-cadastro input:focus {
+.formulario-cadastro input:focus,
+.formulario-cadastro select:focus {
   outline: none;
   border-color: rgba(37, 99, 235, 0.6);
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.formulario-cadastro select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #64748b 50%), linear-gradient(135deg, #64748b 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% - 2px), calc(100% - 12px) calc(50% - 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 2.4rem;
 }
 
 .form-row {

@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { servicoService } from '../services/api';
+import { servicoService, funcionarioService, cidadeService } from '../services/api';
 
 export default function Servicos() {
   const [servicos, setServicos] = useState([]);
+  const [funcionarios, setFuncionarios] = useState([]);
+  const [cidades, setCidades] = useState([]);
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
+  const [funcionarioId, setFuncionarioId] = useState('');
+  const [cidadeId, setCidadeId] = useState('');
   const [erro, setErro] = useState('');
   const [editandoId, setEditandoId] = useState(null);
 
   useEffect(() => {
     carregarServicos();
+    carregarFuncionarios();
+    carregarCidades();
   }, []);
 
   const carregarServicos = async () => {
@@ -21,9 +27,29 @@ export default function Servicos() {
     }
   };
 
+  const carregarFuncionarios = async () => {
+    try {
+      const response = await funcionarioService.listar();
+      setFuncionarios(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar funcionários', error);
+    }
+  };
+
+  const carregarCidades = async () => {
+    try {
+      const response = await cidadeService.listar();
+      setCidades(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar cidades', error);
+    }
+  };
+
   const resetarFormulario = () => {
     setNome('');
     setDescricao('');
+    setFuncionarioId('');
+    setCidadeId('');
     setErro('');
     setEditandoId(null);
   };
@@ -32,11 +58,13 @@ export default function Servicos() {
     setEditandoId(servico.id);
     setNome(servico.nome);
     setDescricao(servico.descricao);
+    setFuncionarioId(servico.funcionarioId || '');
+    setCidadeId(servico.cidadeId || '');
     setErro('');
   };
 
   const salvarServico = async () => {
-    if (!nome.trim() || !descricao.trim()) {
+    if (!nome.trim() || !descricao.trim() || !funcionarioId || !cidadeId) {
       setErro('Preencha todos os campos!');
       return;
     }
@@ -44,10 +72,17 @@ export default function Servicos() {
     setErro('');
 
     try {
+      const dadosServico = {
+        nome: nome.trim(),
+        descricao: descricao.trim(),
+        funcionarioId,
+        cidadeId,
+      };
+
       if (editandoId) {
-        await servicoService.atualizar(editandoId, { nome: nome.trim(), descricao: descricao.trim() });
+        await servicoService.atualizar(editandoId, dadosServico);
       } else {
-        await servicoService.cadastrar({ nome: nome.trim(), descricao: descricao.trim() });
+        await servicoService.cadastrar(dadosServico);
       }
 
       resetarFormulario();
@@ -82,6 +117,30 @@ export default function Servicos() {
             value={descricao}
             onChange={(e) => setDescricao(e.target.value)}
           />
+          <select
+            className={`field-input ${erro && !funcionarioId ? 'input-error' : ''}`}
+            value={funcionarioId}
+            onChange={(e) => setFuncionarioId(e.target.value)}
+          >
+            <option value="">Selecione o funcionário</option>
+            {funcionarios.map((funcionario) => (
+              <option key={funcionario.id} value={funcionario.id}>
+                {funcionario.nome}
+              </option>
+            ))}
+          </select>
+          <select
+            className={`field-input ${erro && !cidadeId ? 'input-error' : ''}`}
+            value={cidadeId}
+            onChange={(e) => setCidadeId(e.target.value)}
+          >
+            <option value="">Selecione a cidade</option>
+            {cidades.map((cidade) => (
+              <option key={cidade.id} value={cidade.id}>
+                {cidade.nome}
+              </option>
+            ))}
+          </select>
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
@@ -102,19 +161,27 @@ export default function Servicos() {
               <tr>
                 <th>Nome</th>
                 <th>Descrição</th>
+                <th>Funcionário</th>
+                <th>Cidade</th>
                 <th className="table-action-header"></th>
               </tr>
             </thead>
             <tbody>
-              {servicos.map((serv) => (
-                <tr key={serv.id}>
-                  <td>{serv.nome}</td>
-                  <td>{serv.descricao}</td>
-                  <td>
-                    <span className="edit-icon" onClick={() => handleEditar(serv)} title="Editar">✏️</span>
-                  </td>
-                </tr>
-              ))}
+              {servicos.map((serv) => {
+                const funcionario = funcionarios.find((item) => item.id === Number(serv.funcionarioId));
+                const cidade = cidades.find((item) => item.id === Number(serv.cidadeId));
+                return (
+                  <tr key={serv.id}>
+                    <td>{serv.nome}</td>
+                    <td>{serv.descricao}</td>
+                    <td>{funcionario ? funcionario.nome : '-'}</td>
+                    <td>{cidade ? cidade.nome : '-'}</td>
+                    <td>
+                      <span className="edit-icon" onClick={() => handleEditar(serv)} title="Editar">✏️</span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
