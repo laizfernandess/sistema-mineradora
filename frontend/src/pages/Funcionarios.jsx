@@ -6,6 +6,7 @@ export default function Funcionarios() {
   const [nome, setNome] = useState('');
   const [cargo, setCargo] = useState('');
   const [erro, setErro] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
   useEffect(() => {
     carregarFuncionarios();
@@ -20,7 +21,21 @@ export default function Funcionarios() {
     }
   };
 
-  const cadastrarFuncionario = async () => {
+  const resetarFormulario = () => {
+    setNome('');
+    setCargo('');
+    setErro('');
+    setEditandoId(null);
+  };
+
+  const handleEditar = (funcionario) => {
+    setEditandoId(funcionario.id);
+    setNome(funcionario.nome);
+    setCargo(funcionario.cargo);
+    setErro('');
+  };
+
+  const salvarFuncionario = async () => {
     if (!nome.trim() || !cargo.trim()) {
       setErro('Preencha todos os campos!');
       return;
@@ -29,13 +44,17 @@ export default function Funcionarios() {
     setErro('');
 
     try {
-      await funcionarioService.cadastrar({ nome: nome.trim(), cargo: cargo.trim() });
-      setNome('');
-      setCargo('');
+      if (editandoId) {
+        await funcionarioService.atualizar(editandoId, { nome: nome.trim(), cargo: cargo.trim() });
+      } else {
+        await funcionarioService.cadastrar({ nome: nome.trim(), cargo: cargo.trim() });
+      }
+
+      resetarFormulario();
       carregarFuncionarios();
     } catch (error) {
-      console.error('Erro ao cadastrar', error);
-      setErro('Não foi possível cadastrar o funcionário.');
+      console.error('Erro ao salvar funcionário', error);
+      setErro(editandoId ? 'Não foi possível atualizar o funcionário.' : 'Não foi possível cadastrar o funcionário.');
     }
   };
 
@@ -66,7 +85,10 @@ export default function Funcionarios() {
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
-          <button type="button" onClick={cadastrarFuncionario}>Cadastrar</button>
+          {editandoId && (
+            <button type="button" className="secondary-btn" onClick={resetarFormulario}>Cancelar</button>
+          )}
+          <button type="button" onClick={salvarFuncionario}>{editandoId ? 'Salvar edição' : 'Cadastrar'}</button>
         </div>
       </div>
 
@@ -75,11 +97,26 @@ export default function Funcionarios() {
         {funcionarios.length === 0 ? (
           <p className="empty-state">Nenhum funcionário cadastrado.</p>
         ) : (
-          <ul>
-            {funcionarios.map((func) => (
-              <li key={func.id}><strong>{func.nome}</strong> - Cargo: {func.cargo}</li>
-            ))}
-          </ul>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Cargo</th>
+                <th className="table-action-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {funcionarios.map((func) => (
+                <tr key={func.id}>
+                  <td>{func.nome}</td>
+                  <td>{func.cargo}</td>
+                  <td>
+                    <span className="edit-icon" onClick={() => handleEditar(func)} title="Editar">✏️</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

@@ -1,14 +1,22 @@
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-let equipamentos = [
-  { id: 1, nome: 'Equipamento A', setor: 'Setor 1' },
-  { id: 2, nome: 'Equipamento B', setor: 'Setor 2' },
-  { id: 3, nome: 'Equipamento C', setor: 'Setor 3' },
-];
+const salvar = (chave, valor) => {
+  localStorage.setItem(chave, JSON.stringify(valor));
+};
+
+const carregar = (chave, valorInicial) => {
+  const valor = localStorage.getItem(chave);
+  if (valor) {
+    return JSON.parse(valor);
+  }
+  return valorInicial;
+};
+
+let equipamentos = carregar('equipamentos', []);
 
 export const equipamentoService = {
   listar: async () => {
-    await delay(500); //
+    await delay(500);
     return {
       data: [...equipamentos],
     };
@@ -21,18 +29,31 @@ export const equipamentoService = {
       ...equipamento,
     };
     equipamentos.push(novoEquipamento);
+    salvar("equipamentos", equipamentos);
     return {
       data: novoEquipamento,
     };
+  },
 
+  atualizar: async (id, equipamento) => {
+    await delay(500);
+    const index = equipamentos.findIndex((item) => item.id === id);
+    if (index === -1) {
+      throw new Error('Equipamento não encontrado');
+    }
+
+    equipamentos[index] = {
+      ...equipamentos[index],
+      ...equipamento,
+    };
+    salvar("equipamentos", equipamentos);
+    return {
+      data: equipamentos[index],
+    };
   },
 };
 
-let cidades = [
-  { id: 1, nome: 'Cidade A', estado: 'Estado 1' },
-  { id: 2, nome: 'Cidade B', estado: 'Estado 2' },
-  { id: 3, nome: 'Cidade C', estado: 'Estado 3' },
-];
+let cidades = carregar('cidades', []);
 
 export const cidadeService = {
   listar: async () => {
@@ -49,17 +70,31 @@ export const cidadeService = {
       ...cidade,
     };
     cidades.push(novaCidade);
+    salvar("cidades", cidades);
     return {
       data: novaCidade,
     };
   },
+
+  atualizar: async (id, cidade) => {
+    await delay(500);
+    const index = cidades.findIndex((item) => item.id === id);
+    if (index === -1) {
+      throw new Error('Cidade não encontrada');
+    }
+
+    cidades[index] = {
+      ...cidades[index],
+      ...cidade,
+    };
+    salvar("cidades", cidades);
+    return {
+      data: cidades[index],
+    };
+  },
 };
 
-let funcionarios = [
-  { id: 1, nome: 'Funcionário A', cargo: 'Cargo 1' },
-  { id: 2, nome: 'Funcionário B', cargo: 'Cargo 2' },
-  { id: 3, nome: 'Funcionário C', cargo: 'Cargo 3' },
-];
+let funcionarios = carregar('funcionarios', []);
 
 export const funcionarioService = {
   listar: async () => {
@@ -76,17 +111,31 @@ export const funcionarioService = {
       ...funcionario,
     };
     funcionarios.push(novoFuncionario);
+    salvar("funcionarios", funcionarios);
     return {
       data: novoFuncionario,
     };
   },
-}
 
-let servicos = [
-  { id: 1, nome: 'Serviço A', setor: 'Setor 1' },
-  { id: 2, nome: 'Serviço B', setor: 'Setor 2' },
-  { id: 3, nome: 'Serviço C', setor: 'Setor 3' },
-];
+  atualizar: async (id, funcionario) => {
+    await delay(500);
+    const index = funcionarios.findIndex((item) => item.id === id);
+    if (index === -1) {
+      throw new Error('Funcionário não encontrado');
+    }
+
+    funcionarios[index] = {
+      ...funcionarios[index],
+      ...funcionario,
+    };
+    salvar("funcionarios", funcionarios);
+    return {
+      data: funcionarios[index],
+    };
+  },
+};
+
+let servicos = carregar('servicos', []);
 
 export const servicoService = {
   listar: async () => {
@@ -103,8 +152,26 @@ export const servicoService = {
       ...servico,
     };
     servicos.push(novoServico);
+    salvar("servicos", servicos);
     return {
       data: novoServico,
+    };
+  },
+
+  atualizar: async (id, servico) => {
+    await delay(500);
+    const index = servicos.findIndex((item) => item.id === id);
+    if (index === -1) {
+      throw new Error('Serviço não encontrado');
+    }
+
+    servicos[index] = {
+      ...servicos[index],
+      ...servico,
+    };
+    salvar("servicos", servicos);
+    return {
+      data: servicos[index],
     };
   },
 };

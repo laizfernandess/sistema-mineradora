@@ -6,25 +6,56 @@ export default function Cidades() {
   const [nome, setNome] = React.useState('');
   const [estado, setEstado] = React.useState('');
   const [erro, setErro] = React.useState('');
+  const [editandoId, setEditandoId] = React.useState(null);
 
   React.useEffect(() => {
-    cidadeService.listar().then((response) => {
-      setCidades(response.data);
-    });
+    carregarCidades();
   }, []);
 
-  const cadastrarCidade = () => {
+  const carregarCidades = async () => {
+    try {
+      const response = await cidadeService.listar();
+      setCidades(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar cidades', error);
+    }
+  };
+
+  const resetarFormulario = () => {
+    setNome('');
+    setEstado('');
+    setErro('');
+    setEditandoId(null);
+  };
+
+  const handleEditar = (cidade) => {
+    setEditandoId(cidade.id);
+    setNome(cidade.nome);
+    setEstado(cidade.estado);
+    setErro('');
+  };
+
+  const salvarCidade = async () => {
     if (!nome.trim() || !estado.trim()) {
       setErro('Preencha todos os campos!');
       return;
     }
 
     setErro('');
-    cidadeService.cadastrar({ nome: nome.trim(), estado: estado.trim() }).then((response) => {
-      setCidades([...cidades, response.data]);
-      setNome('');
-      setEstado('');
-    });
+
+    try {
+      if (editandoId) {
+        await cidadeService.atualizar(editandoId, { nome: nome.trim(), estado: estado.trim() });
+      } else {
+        await cidadeService.cadastrar({ nome: nome.trim(), estado: estado.trim() });
+      }
+
+      resetarFormulario();
+      carregarCidades();
+    } catch (error) {
+      console.error('Erro ao salvar cidade', error);
+      setErro(editandoId ? 'Não foi possível atualizar a cidade.' : 'Não foi possível cadastrar a cidade.');
+    }
   };
 
   return (
@@ -54,7 +85,10 @@ export default function Cidades() {
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
-          <button type="button" onClick={cadastrarCidade}>Cadastrar</button>
+          {editandoId && (
+            <button type="button" className="secondary-btn" onClick={resetarFormulario}>Cancelar</button>
+          )}
+          <button type="button" onClick={salvarCidade}>{editandoId ? 'Salvar edição' : 'Cadastrar'}</button>
         </div>
       </div>
 
@@ -63,11 +97,26 @@ export default function Cidades() {
         {cidades.length === 0 ? (
           <p className="empty-state">Nenhuma cidade cadastrada.</p>
         ) : (
-          <ul>
-            {cidades.map((cidade) => (
-              <li key={cidade.id}><strong>{cidade.nome}</strong> - Estado: {cidade.estado}</li>
-            ))}
-          </ul>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Estado</th>
+                <th className="table-action-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {cidades.map((cidade) => (
+                <tr key={cidade.id}>
+                  <td>{cidade.nome}</td>
+                  <td>{cidade.estado}</td>
+                  <td>
+                    <span className="edit-icon" onClick={() => handleEditar(cidade)} title="Editar">✏️</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

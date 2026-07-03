@@ -6,6 +6,7 @@ export default function Equipamentos() {
   const [nome, setNome] = useState('');
   const [setor, setSetor] = useState('');
   const [erro, setErro] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
   useEffect(() => {
     carregarEquipamentos();
@@ -20,7 +21,21 @@ export default function Equipamentos() {
     }
   };
 
-  const cadastrarEquipamento = async () => {
+  const resetarFormulario = () => {
+    setNome('');
+    setSetor('');
+    setErro('');
+    setEditandoId(null);
+  };
+
+  const handleEditar = (equipamento) => {
+    setEditandoId(equipamento.id);
+    setNome(equipamento.nome);
+    setSetor(equipamento.setor);
+    setErro('');
+  };
+
+  const salvarEquipamento = async () => {
     if (!nome.trim() || !setor.trim()) {
       setErro('Preencha todos os campos!');
       return;
@@ -29,13 +44,17 @@ export default function Equipamentos() {
     setErro('');
 
     try {
-      await equipamentoService.cadastrar({ nome: nome.trim(), setor: setor.trim() });
-      setNome('');
-      setSetor('');
+      if (editandoId) {
+        await equipamentoService.atualizar(editandoId, { nome: nome.trim(), setor: setor.trim() });
+      } else {
+        await equipamentoService.cadastrar({ nome: nome.trim(), setor: setor.trim() });
+      }
+
+      resetarFormulario();
       carregarEquipamentos();
     } catch (error) {
-      console.error('Erro ao cadastrar', error);
-      setErro('Não foi possível cadastrar o equipamento.');
+      console.error('Erro ao salvar equipamento', error);
+      setErro(editandoId ? 'Não foi possível atualizar o equipamento.' : 'Não foi possível cadastrar o equipamento.');
     }
   };
 
@@ -66,7 +85,10 @@ export default function Equipamentos() {
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
-          <button type="button" onClick={cadastrarEquipamento}>Cadastrar</button>
+          {editandoId && (
+            <button type="button" className="secondary-btn" onClick={resetarFormulario}>Cancelar</button>
+          )}
+          <button type="button" onClick={salvarEquipamento}>{editandoId ? 'Salvar edição' : 'Cadastrar'}</button>
         </div>
       </div>
 
@@ -75,11 +97,26 @@ export default function Equipamentos() {
         {equipamentos.length === 0 ? (
           <p className="empty-state">Nenhum equipamento encontrado.</p>
         ) : (
-          <ul>
-            {equipamentos.map((eq) => (
-              <li key={eq.id}><strong>{eq.nome}</strong> - Setor: {eq.setor}</li>
-            ))}
-          </ul>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Setor</th>
+                <th className="table-action-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {equipamentos.map((eq) => (
+                <tr key={eq.id}>
+                  <td>{eq.nome}</td>
+                  <td>{eq.setor}</td>
+                  <td>
+                    <span className="edit-icon" onClick={() => handleEditar(eq)} title="Editar">✏️</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>

@@ -6,6 +6,7 @@ export default function Servicos() {
   const [nome, setNome] = useState('');
   const [descricao, setDescricao] = useState('');
   const [erro, setErro] = useState('');
+  const [editandoId, setEditandoId] = useState(null);
 
   useEffect(() => {
     carregarServicos();
@@ -20,7 +21,21 @@ export default function Servicos() {
     }
   };
 
-  const cadastrarServico = async () => {
+  const resetarFormulario = () => {
+    setNome('');
+    setDescricao('');
+    setErro('');
+    setEditandoId(null);
+  };
+
+  const handleEditar = (servico) => {
+    setEditandoId(servico.id);
+    setNome(servico.nome);
+    setDescricao(servico.descricao);
+    setErro('');
+  };
+
+  const salvarServico = async () => {
     if (!nome.trim() || !descricao.trim()) {
       setErro('Preencha todos os campos!');
       return;
@@ -29,13 +44,17 @@ export default function Servicos() {
     setErro('');
 
     try {
-      await servicoService.cadastrar({ nome: nome.trim(), descricao: descricao.trim() });
-      setNome('');
-      setDescricao('');
+      if (editandoId) {
+        await servicoService.atualizar(editandoId, { nome: nome.trim(), descricao: descricao.trim() });
+      } else {
+        await servicoService.cadastrar({ nome: nome.trim(), descricao: descricao.trim() });
+      }
+
+      resetarFormulario();
       carregarServicos();
     } catch (error) {
-      console.error('Erro ao cadastrar serviço', error);
-      setErro('Não foi possível cadastrar o serviço.');
+      console.error('Erro ao salvar serviço', error);
+      setErro(editandoId ? 'Não foi possível atualizar o serviço.' : 'Não foi possível cadastrar o serviço.');
     }
   };
 
@@ -66,7 +85,10 @@ export default function Servicos() {
         </div>
         {erro && <p className="form-error">{erro}</p>}
         <div className="form-actions">
-          <button type="button" onClick={cadastrarServico}>Cadastrar</button>
+          {editandoId && (
+            <button type="button" className="secondary-btn" onClick={resetarFormulario}>Cancelar</button>
+          )}
+          <button type="button" onClick={salvarServico}>{editandoId ? 'Salvar edição' : 'Cadastrar'}</button>
         </div>
       </div>
 
@@ -75,11 +97,26 @@ export default function Servicos() {
         {servicos.length === 0 ? (
           <p className="empty-state">Nenhum serviço cadastrado.</p>
         ) : (
-          <ul>
-            {servicos.map((serv) => (
-              <li key={serv.id}><strong>{serv.nome}</strong> - Descrição: {serv.descricao}</li>
-            ))}
-          </ul>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th className="table-action-header"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {servicos.map((serv) => (
+                <tr key={serv.id}>
+                  <td>{serv.nome}</td>
+                  <td>{serv.descricao}</td>
+                  <td>
+                    <span className="edit-icon" onClick={() => handleEditar(serv)} title="Editar">✏️</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
     </div>
